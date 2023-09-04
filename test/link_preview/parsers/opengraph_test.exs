@@ -1,43 +1,50 @@
 defmodule LinkPreview.Parsers.OpengraphTest do
   use LinkPreview.Case
   alias LinkPreview.Parsers.Opengraph
-  alias LinkPreview.Page
-
-  @page %Page{original_url: "http://example.com/", website_url: "example.com"}
 
   describe "title" do
     test "optimistic case" do
-      assert Opengraph.title(@page, @opengraph) == %Page{@page | title: "Opengraph Test Title"}
+      parsed_doc = Floki.parse_document!(@opengraph)
+
+      assert Opengraph.title(parsed_doc) == "Opengraph Test Title"
     end
 
     test "pessimistic case" do
-      assert Opengraph.title(@page, @html) == @page
+      parsed_doc = Floki.parse_document!(@html)
+
+      assert Opengraph.title(parsed_doc) == nil
     end
   end
 
   describe "description" do
     test "optimistic case" do
-      assert Opengraph.description(@page, @opengraph) == %Page{
-               @page
-               | description: "Opengraph Test Description"
-             }
+      parsed_doc = Floki.parse_document!(@opengraph)
+
+      assert Opengraph.description(parsed_doc) == "Opengraph Test Description"
+
     end
 
     test "pessimistic case" do
-      assert Opengraph.description(@page, @html) == @page
+      parsed_doc = Floki.parse_document!(@html)
+
+      assert Opengraph.description(parsed_doc) == nil
     end
   end
 
   describe "images" do
     test "optimistic case" do
-      assert Opengraph.images(@page, @opengraph).images == [
+      parsed_doc = Floki.parse_document!(@opengraph)
+
+      assert Opengraph.images(parsed_doc) == [
                %{url: "http://example.com/images/og1.jpg"},
                %{url: "http://example.com/images/og2.jpg"}
              ]
     end
 
     test "pessimistic case" do
-      assert Opengraph.images(@page, @html) == @page
+      parsed_doc = Floki.parse_document!(@html)
+
+      assert Opengraph.images(parsed_doc) == []
     end
   end
 end

@@ -1,6 +1,6 @@
 defmodule LinkPreview.Parsers.Util do
   @moduledoc """
-    Utility functions shared across 2 or more parsers.
+    Utility functions.
   """
 
   alias LinkPreview.{ParallelHelper, Requests}
@@ -27,30 +27,6 @@ defmodule LinkPreview.Parsers.Util do
       |> decode_html()
     else
       text
-    end
-  end
-
-  @doc """
-    When `:force_images_absolute_url` is set to true, website_url from page struct will
-    be prepend to all relative urls. Absolute urls remain unchanged.
-
-    Example:
-      iex> page = %Page{website_url: "example.com"}
-
-      iex> maybe_force_absolute_url(["another_page/image.jpg", "/assets/image.jpg"], page)
-      ["another_page/image.jpg", "/assets/image.jpg"]
-
-      iex> Application.put_env(:link_preview, :force_images_absolute_url, true)
-
-      iex> maybe_force_absolute_url(["another_page/image.jpg", "/assets/image.jpg"], page)
-      ["another_page/image.jpg", "example.com/assets/image.jpg"]
-  """
-  def maybe_force_absolute_url(urls, page) do
-    if Application.get_env(:link_preview, :force_images_absolute_url) do
-      urls
-      |> Enum.map(&force_absolute_url(&1, page.website_url))
-    else
-      urls
     end
   end
 
@@ -103,17 +79,6 @@ defmodule LinkPreview.Parsers.Util do
       text |> HtmlEntities.decode()
     else
       text
-    end
-  end
-
-  defp force_absolute_url(url, website_url) do
-    with false <- String.match?(url, ~r/\A([^\/]|\/\/[^\/])/) do
-      prefix = website_url |> String.replace_suffix("/", "")
-      suffix = url |> String.replace_prefix("/", "")
-
-      prefix <> "/" <> suffix
-    else
-      true -> url
     end
   end
 

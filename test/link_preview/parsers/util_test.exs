@@ -57,45 +57,6 @@ defmodule LinkPreview.Parsers.UtilTest do
     end
   end
 
-  describe "maybe_force_absolute_url" do
-    setup opts do
-      page = %LinkPreview.Page{website_url: "example.com"}
-      result = Map.merge(opts, %{page: page})
-
-      Application.put_env(:link_preview, :force_images_absolute_url, true)
-
-      {:ok, result}
-    end
-
-    test "absolute url with http schema", %{page: page} do
-      assert Util.maybe_force_absolute_url(["http://example.com/img"], page) == [
-               "http://example.com/img"
-             ]
-    end
-
-    test "absolute url with https schema", %{page: page} do
-      assert Util.maybe_force_absolute_url(["https://example.com/img"], page) == [
-               "https://example.com/img"
-             ]
-    end
-
-    test "absolute url without schema", %{page: page} do
-      assert Util.maybe_force_absolute_url(["example.com/img"], page) == ["example.com/img"]
-    end
-
-    test "weird shit", %{page: page} do
-      assert Util.maybe_force_absolute_url(["//example.com/img"], page) == ["//example.com/img"]
-    end
-
-    test "absolute url including port number", %{page: page} do
-      assert Util.maybe_force_absolute_url(["localhost:4000/img"], page) == ["localhost:4000/img"]
-    end
-
-    test "relative url", %{page: page} do
-      assert Util.maybe_force_absolute_url(["/img"], page) == ["example.com/img"]
-    end
-  end
-
   describe "maybe_force_url_schema" do
     setup opts do
       Application.put_env(:link_preview, :force_images_url_schema, true)
