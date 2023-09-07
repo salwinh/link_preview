@@ -2,8 +2,7 @@ defmodule LinkPreview.Processor do
   @moduledoc """
     Combines the logic of other modules with user input.
   """
-  alias LinkPreview.{Page, Requests}
-  alias LinkPreview.Parsers.{Basic, Opengraph, Html, Image}
+  alias LinkPreview.{Page, Parser, Requests}
 
   @doc """
     Takes url and returns result of processing.
@@ -21,12 +20,10 @@ defmodule LinkPreview.Processor do
     end
     |> case do
       {:ok, %Tesla.Env{status: 200, url: final_url}, "text/html" <> _} ->
-        parsers = Application.get_env(:link_preview, :parsers, [Opengraph, Html])
-
-        do_call(url, final_url, parsers)
+        do_call(url, final_url)
 
       {:ok, %Tesla.Env{status: 200, url: final_url}, "image/" <> _} ->
-        do_image_call(url, final_url, [Image])
+        do_image_call(url, final_url)
 
       {:ok, _, _} ->
         %LinkPreview.Error{origin: LinkPreview, message: "unsupported response"}
@@ -53,53 +50,21 @@ defmodule LinkPreview.Processor do
     end
   end
 
-  defp do_image_call(url, final_url, parsers) do
-    url
-    |> Page.new(final_url)
-    |> collect_data(parsers, nil)
+  defp do_image_call(url, final_url) do
+    page = Page.new(url, final_url)
+
+    %Page{page | images: [%{url: url}]}
   end
 
-  defp do_call(url, final_url, parsers) do
+  defp do_call(url, final_url) do
     case Requests.get(url) do
       {:ok, %Tesla.Env{status: 200, body: body}} ->
         url
         |> Page.new(final_url)
-        |> collect_data(parsers, body)
+        |> Parser.parse(body)
 
       _ ->
         %LinkPreview.Error{origin: LinkPreview, message: "unsupported response"}
-    end
-  end
-
-  defp collect_data(page, parsers, body) do
-    Enum.reduce(parsers, page, &apply_each_function(&1, &2, body))
-  end
-
-  defp apply_each_function(parser, page, body) do
-    if Code.ensure_loaded?(parser) do
-      Enum.reduce_while(Basic.parsable(), page, &apply_or_halt(parser, &1, &2, body))
-    else
-      page
-    end
-  end
-
-  defp apply_or_halt(parser, :images, page, body) do
-    current_value = Map.get(page, :images)
-
-    if current_value == [] do
-      {:cont, apply(parser, :images, [page, body])}
-    else
-      {:halt, page}
-    end
-  end
-
-  defp apply_or_halt(parser, function, page, body) do
-    current_value = Map.get(page, function)
-
-    if is_nil(current_value) do
-      {:cont, apply(parser, function, [page, body])}
-    else
-      {:halt, page}
     end
   end
 end
